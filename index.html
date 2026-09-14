@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern E-Commerce | AeroStride Pro Runner</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #222222;
+            --accent-color: #4a90e2;
+            --bg-color: #f5f5f7;
+            --text-color: #333333;
+            --border-color: #e5e5e5;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .product-card {
+            background: #ffffff;
+            border-radius: 16px;
+            box-shadow: 0 12px 32px rgba(0, 0, 0, 0.06);
+            max-width: 1000px;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 48px;
+            padding: 48px;
+            box-sizing: border-box;
+        }
+
+        .product-image {
+            background-color: #f9f9f9;
+            border-radius: 12px;
+            width: 100%;
+            aspect-ratio: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+            position: relative;
+        }
+
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .product-info {
+            display: flex;
+            flex-direction: column;
+        }
+
+        h1 {
+            margin: 0 0 12px 0;
+            font-size: 32px;
+            color: var(--primary-color);
+            font-weight: 700;
+            line-height: 1.2;
+        }
+
+        .price-container {
+            display: flex;
+            align-items: baseline;
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+
+        .current-price {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .old-price {
+            font-size: 20px;
+            text-decoration: line-through;
+            color: #999999;
+        }
+
+        .description {
+            line-height: 1.6;
+            color: #555555;
+            margin-bottom: 24px;
+            font-size: 15px;
+        }
+
+        .features {
+            margin: 0 0 32px 0;
+            padding-left: 20px;
+            color: #555555;
+            line-height: 1.8;
+            font-size: 15px;
+        }
+
+        .sizes {
+            margin-bottom: 32px;
+            position: relative;
+        }
+
+        .sizes-title {
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: block;
+            font-size: 14px;
+            color: var(--primary-color);
+        }
+
+        .size-options {
+            display: flex;
+            gap: 10px;
+        }
+
+        .size-btn {
+            padding: 12px 18px;
+            border: 1px solid var(--border-color);
+            background: #ffffff;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 15px;
+            transition: all 0.2s ease;
+            font-family: inherit;
+        }
+
+        .size-btn:hover {
+            border-color: #999;
+        }
+
+        .size-btn.active {
+            border-color: var(--primary-color);
+            background: var(--primary-color);
+            color: #ffffff;
+        }
+
+        .add-to-cart-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 18px 32px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 12px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s ease, transform 0.1s ease;
+            margin-bottom: 16px;
+            font-family: inherit;
+        }
+
+        .add-to-cart-btn:hover {
+            background-color: #333333;
+        }
+
+        .add-to-cart-btn:active {
+            transform: scale(0.98);
+        }
+
+        .delivery-info {
+            background: #f9f9f9;
+            padding: 16px 20px;
+            border-radius: 12px;
+            font-size: 14px;
+            color: #555555;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            border: 1px solid var(--border-color);
+            margin-top: auto;
+        }
+
+        .delivery-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .product-card {
+                grid-template-columns: 1fr;
+                padding: 24px;
+                gap: 32px;
+            }
+        }
+
+        /* Cart Icon */
+        .header-nav {
+            position: absolute;
+            top: 24px;
+            right: 40px;
+        }
+
+        .cart-icon-container {
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 48px;
+            height: 48px;
+            background: #ffffff;
+            border-radius: 50%;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            transition: transform 0.2s ease;
+        }
+
+        .cart-icon-container:hover {
+            transform: scale(1.05);
+        }
+
+        .cart-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #e74c3c;
+            color: white;
+            font-size: 11px;
+            font-weight: 700;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            border: 2px solid var(--bg-color);
+        }
+
+        @keyframes pop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.4); }
+            100% { transform: scale(1); }
+        }
+
+        .cart-badge.pop {
+            animation: pop 0.3s ease-out;
+        }
+
+        /* Shake and Error */
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            20%, 60% { transform: translateX(-5px); }
+            40%, 80% { transform: translateX(5px); }
+        }
+
+        .sizes.error {
+            animation: shake 0.5s ease;
+        }
+
+        .sizes.error::after {
+            content: '';
+            position: absolute;
+            top: -12px;
+            left: -16px;
+            right: -16px;
+            bottom: -12px;
+            border: 2px solid #e74c3c;
+            border-radius: 12px;
+            background: rgba(231, 76, 60, 0.05);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .sizes.error > * {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Button Success */
+        .add-to-cart-btn.success {
+            background-color: #2ecc71;
+            pointer-events: none;
+        }
+
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--primary-color);
+            color: white;
+            padding: 14px 28px;
+            border-radius: 50px;
+            font-size: 15px;
+            font-weight: 500;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 1000;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header-nav">
+        <div class="cart-icon-container">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="9" cy="21" r="1"></circle>
+                <circle cx="20" cy="21" r="1"></circle>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
+            </svg>
+            <div class="cart-badge" id="cart-badge">0</div>
+        </div>
+    </div>
+
+    <div class="product-card" id="product-container">
+        <div class="product-image">
+            <img src="https://images.unsplash.com/photo-1552346154-21d32810aba3?auto=format&fit=crop&w=1000&q=85"
+                alt="AeroStride Pro Runner">
+        </div>
+
+        <div class="product-info">
+            <h1 class="product-title">AeroStride Pro Runner</h1>
+
+            <div class="price-container">
+                <span class="current-price">$129.00</span>
+                <span class="old-price">$165.00</span>
+            </div>
+
+            <p class="description" id="product-description">
+                The perfect sneakers for urban life and daily running. A breathable upper ensures superior ventilation,
+                while the EVA foam midsole absorbs impact to protect your joints during runs on asphalt.
+            </p>
+
+            <ul class="features">
+                <li>Upper Material: Breathable mesh, nylon</li>
+                <li>Sole: EVA foam, rubber</li>
+                <li>Best for: Road running, daily wear</li>
+                <li>Weight: 9.8 oz (per shoe)</li>
+            </ul>
+
+            <div class="sizes">
+                <span class="sizes-title">Select Size (US):</span>
+                <div class="size-options">
+                    <button class="size-btn">8</button>
+                    <button class="size-btn">8.5</button>
+                    <button class="size-btn">9</button>
+                    <button class="size-btn">9.5</button>
+                    <button class="size-btn">10</button>
+                </div>
+            </div>
+
+            <!-- Widget will be injected around here -->
+            <button class="add-to-cart-btn" id="add-to-cart">Add to Cart</button>
+
+            <div class="delivery-info">
+                <div class="delivery-item">🚚 Free shipping on orders over $150</div>
+                <div class="delivery-item">🔄 30-day hassle-free returns</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Injecting Widget Script -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        document.querySelectorAll('.size-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                
+                // Remove error state if any
+                const sizesBlock = document.querySelector('.sizes');
+                sizesBlock.classList.remove('error');
+            });
+        });
+
+        const addToCartBtn = document.getElementById('add-to-cart');
+        const sizesBlock = document.querySelector('.sizes');
+        const cartBadge = document.getElementById('cart-badge');
+        const toast = document.getElementById('toast');
+        
+        let cartCount = 0;
+        let errorTimeout;
+        let toastTimeout;
+
+        addToCartBtn.addEventListener('click', () => {
+            const activeSizeBtn = document.querySelector('.size-btn.active');
+            
+            if (!activeSizeBtn) {
+                clearTimeout(errorTimeout);
+                sizesBlock.classList.remove('error');
+                void sizesBlock.offsetWidth; // trigger reflow
+                sizesBlock.classList.add('error');
+                
+                errorTimeout = setTimeout(() => {
+                    sizesBlock.classList.remove('error');
+                }, 500);
+            } else {
+                const selectedSize = activeSizeBtn.textContent;
+                
+                // Button success animation
+                addToCartBtn.textContent = 'Added to Cart ✓';
+                addToCartBtn.classList.add('success');
+                
+                setTimeout(() => {
+                    addToCartBtn.textContent = 'Add to Cart';
+                    addToCartBtn.classList.remove('success');
+                }, 1500);
+                
+                // Cart badge update & animation
+                cartCount++;
+                cartBadge.textContent = cartCount;
+                cartBadge.classList.remove('pop');
+                void cartBadge.offsetWidth;
+                cartBadge.classList.add('pop');
+                
+                // Toast notification
+                clearTimeout(toastTimeout);
+                toast.textContent = `AeroStride Pro Runner (Size ${selectedSize}) added to bag`;
+                toast.classList.add('show');
+                
+                toastTimeout = setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3000);
+            }
+        });
+    </script>
+    <script src="embed.js"></script>
+</body>
+
+</html>
