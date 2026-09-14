@@ -237,9 +237,17 @@
         }
 
         @keyframes pop {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.4); }
-            100% { transform: scale(1); }
+            0% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.4);
+            }
+
+            100% {
+                transform: scale(1);
+            }
         }
 
         .cart-badge.pop {
@@ -248,9 +256,21 @@
 
         /* Shake and Error */
         @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            20%, 60% { transform: translateX(-5px); }
-            40%, 80% { transform: translateX(5px); }
+
+            0%,
+            100% {
+                transform: translateX(0);
+            }
+
+            20%,
+            60% {
+                transform: translateX(-5px);
+            }
+
+            40%,
+            80% {
+                transform: translateX(5px);
+            }
         }
 
         .sizes.error {
@@ -271,7 +291,7 @@
             z-index: 0;
         }
 
-        .sizes.error > * {
+        .sizes.error>* {
             position: relative;
             z-index: 1;
         }
@@ -309,7 +329,8 @@
 <body>
     <div class="header-nav">
         <div class="cart-icon-container">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#222" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
                 <circle cx="9" cy="21" r="1"></circle>
                 <circle cx="20" cy="21" r="1"></circle>
                 <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
@@ -373,7 +394,7 @@
             btn.addEventListener('click', (e) => {
                 document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
                 e.target.classList.add('active');
-                
+
                 // Remove error state if any
                 const sizesBlock = document.querySelector('.sizes');
                 sizesBlock.classList.remove('error');
@@ -384,54 +405,54 @@
         const sizesBlock = document.querySelector('.sizes');
         const cartBadge = document.getElementById('cart-badge');
         const toast = document.getElementById('toast');
-        
+
         let cartCount = 0;
         let errorTimeout;
         let toastTimeout;
 
         addToCartBtn.addEventListener('click', () => {
             const activeSizeBtn = document.querySelector('.size-btn.active');
-            
+
             if (!activeSizeBtn) {
                 clearTimeout(errorTimeout);
                 sizesBlock.classList.remove('error');
                 void sizesBlock.offsetWidth; // trigger reflow
                 sizesBlock.classList.add('error');
-                
+
                 errorTimeout = setTimeout(() => {
                     sizesBlock.classList.remove('error');
                 }, 500);
             } else {
                 const selectedSize = activeSizeBtn.textContent;
-                
+
                 // Button success animation
                 addToCartBtn.textContent = 'Added to Cart ✓';
                 addToCartBtn.classList.add('success');
-                
+
                 setTimeout(() => {
                     addToCartBtn.textContent = 'Add to Cart';
                     addToCartBtn.classList.remove('success');
                 }, 1500);
-                
+
                 // Cart badge update & animation
                 cartCount++;
                 cartBadge.textContent = cartCount;
                 cartBadge.classList.remove('pop');
                 void cartBadge.offsetWidth;
                 cartBadge.classList.add('pop');
-                
+
                 // Toast notification
                 clearTimeout(toastTimeout);
                 toast.textContent = `AeroStride Pro Runner (Size ${selectedSize}) added to bag`;
                 toast.classList.add('show');
-                
+
                 toastTimeout = setTimeout(() => {
                     toast.classList.remove('show');
                 }, 3000);
             }
         });
     </script>
-    <script src="embed.js"></script>
+    <script src="clarity.js"></script>
 </body>
 
 </html>
