@@ -1,4 +1,11 @@
 export default async function handler(req, res) {
+  console.log('🔍 DEBUG: api/chat.js called');
+  console.log('Environment GEMINI_API_KEY exists:', !!process.env.GEMINI_API_KEY);
+
+  // Жестко отключаем кэш на всех уровнях Vercel
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
   res.setHeader('Access-Control-Allow-Credentials', true);
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
@@ -11,15 +18,16 @@ export default async function handler(req, res) {
   let apiKey = rawKey.trim().replace(/^["']|["']$/g, '').replace('GEMINI_API_KEY=', '');
 
   if (!apiKey) {
-    return res.status(200).json({ answer: '⚠️ Ошибка: Ключ API не найден на сервере Vercel.' });
+    return res.status(200).json({ answer: '⚠️ Ошибка: Ключ API не найден.' });
   }
 
   try {
     const { question, productContext } = req.body || {};
-    const promptText = `You are a helpful e-commerce assistant. Product: "${productContext?.title || 'Unknown'}". Details: ${productContext?.description || 'None'}. Price: ${productContext?.price || 'Unknown'}. Question: "${question}". Answer concisely in 1-2 sentences.`;
+    const promptText = `You are a helpful e-commerce assistant. Product: "${productContext?.title || ''}". Question: "${question}". Answer concisely in 1-2 sentences.`;
 
-    // СТРОГО v1 (без beta) и самая стабильная модель
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    // Тестируем старую 100% стабильную модель на v1, как просил Claude
+    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
+    console.log('📤 Sending to Google API:', url.replace(apiKey, '[REDACTED_KEY]'));
 
     const response = await fetch(url, {
       method: 'POST',
@@ -28,6 +36,9 @@ export default async function handler(req, res) {
     });
 
     const data = await response.json();
+    
+    console.log('📥 Google API response status:', response.status);
+    console.log('📥 Google API response:', JSON.stringify(data));
 
     if (!response.ok) {
       return res.status(200).json({ answer: `⚠️ Ошибка Google: ${data.error?.message || 'Неизвестная ошибка API'}` });
@@ -36,6 +47,7 @@ export default async function handler(req, res) {
     const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Нет ответа от ИИ.';
     return res.status(200).json({ answer });
   } catch (error) {
+    console.error('💥 Catch error:', error.message);
     return res.status(200).json({ answer: `⚠️ Ошибка сервера: ${error.message}` });
   }
 }
