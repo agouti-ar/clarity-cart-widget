@@ -39,7 +39,7 @@ export default async function handler(req, res) {
       // Тестовый запрос к gemini-2.0-flash или первой найденной модели
       const target = availableModels.find(m => m.includes('2.0-flash')) || availableModels[0] || 'gemini-1.5-flash';
       const testReq = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${target}:generateContent?key=${apiKey}`,
+        `https://generativelanguage.googleapis.com/v1/models/${target}:generateContent?key=${apiKey}`,
         {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -77,7 +77,7 @@ Answer concisely in 1-2 sentences in the question language.`;
 
       for (const m of modelsToTry) {
         const response = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`,
+          `https://generativelanguage.googleapis.com/v1/models/${m}:generateContent?key=${apiKey}`,
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
