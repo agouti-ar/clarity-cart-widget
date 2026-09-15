@@ -14,7 +14,7 @@ export default async function handler(req, res) {
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    console.error('SERVER ERROR: GEMINI_API_KEY is not defined in environment variables');
+    console.error('SERVER ERROR: GEMINI_API_KEY is missing');
     return res.status(500).json({ error: 'API key is missing on server' });
   }
 
@@ -30,25 +30,60 @@ Shipping: ${productContext?.shippingPolicy || ''}
 User Question: "${question}"
 Answer concisely, helpfully, and directly in 1-3 sentences in the same language as the question.`;
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: promptText }] }]
-        })
+    // Приоритетные релизные и актуальные эндпоинты
+    const candidateEndpoints = [
+      `https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`
+    ];
+
+    let finalData = null;
+
+    for (const endpoint of candidateEndpoints) {
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+        });
+
+        if (response.ok) {
+          finalData = await response.json();
+          break;
+        }
+      } catch (err) {
+        console.warn('Endpoint failed, trying next:', endpoint);
       }
-    );
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      console.error('GEMINI API ERROR RESPONSE:', JSON.stringify(data));
-      return res.status(response.status).json({ error: data.error?.message || 'Gemini API Error' });
     }
 
-    const answer = data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated.';
+    // Если прямые эндпоинты не ответили, автоопределяем доступную модель через ListModels
+    if (!finalData) {
+      console.warn('Attempting dynamic model discovery...');
+      const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      const listData = await listRes.json();
+      
+      const matched = listData.models?.find(m => 
+        m.supportedGenerationMethods?.includes('generateContent') && m.name.includes('flash')
+      ) || listData.models?.find(m => m.supportedGenerationMethods?.includes('generateContent'));
+
+      if (matched) {
+        const dynamicEndpoint = `https://generativelanguage.googleapis.com/v1beta/${matched.name}:generateContent?key=${apiKey}`;
+        const dynRes = await fetch(dynamicEndpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+        });
+        if (dynRes.ok) {
+          finalData = await dynRes.json();
+        }
+      }
+    }
+
+    if (!finalData) {
+      return res.status(404).json({ error: 'No compatible Gemini model found for this key.' });
+    }
+
+    const answer = finalData.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated.';
     return res.status(200).json({ answer });
   } catch (error) {
     console.error('INTERNAL SERVER ERROR:', error);
