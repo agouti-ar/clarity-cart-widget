@@ -8,83 +8,93 @@ export default async function handler(req, res) {
     return res.status(200).end();
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
-  }
-
-  // Санитарная очистка ключа от кавычек, пробелов и случайных префиксов
   let rawKey = process.env.GEMINI_API_KEY || '';
-  let apiKey = rawKey.trim();
+  let apiKey = rawKey.trim().replace(/^["']|["']$/g, '');
   if (apiKey.startsWith('GEMINI_API_KEY=')) {
     apiKey = apiKey.replace('GEMINI_API_KEY=', '').trim();
   }
-  apiKey = apiKey.replace(/^["']|["']$/g, '').trim();
 
   if (!apiKey) {
-    console.error('SERVER ERROR: GEMINI_API_KEY is missing');
-    return res.status(500).json({ error: 'API key is missing on server' });
+    const err = { error: 'API_KEY_MISSING', message: 'Переменная GEMINI_API_KEY не найдена в Vercel Environment Variables.' };
+    return res.status(500).json(err);
   }
 
-  try {
-    const { question, productContext } = req.body || {};
+  // РЕЖИМ ДИАГНОСТИКИ (если открыть ссылку /api/chat в браузере)
+  if (req.method === 'GET') {
+    try {
+      const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+      const listData = await listRes.json();
 
-    const promptText = `You are a helpful e-commerce assistant for "${productContext?.title || 'Product'}".
-Product details:
-${productContext?.description || ''}
-Price: ${productContext?.price || ''}
-Shipping: ${productContext?.shippingPolicy || ''}
-
-Question: "${question}"
-Answer concisely, helpfully, and directly in 1-3 sentences in the same language as the question.`;
-
-    // 1. Запрашиваем актуальный список моделей Google для этого ключа
-    const listRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
-    const listData = await listRes.json();
-
-    if (listData.error) {
-      console.error('GOOGLE AUTH/KEY ERROR:', JSON.stringify(listData.error));
-      return res.status(400).json({ error: listData.error.message });
-    }
-
-    // Выводим в лог Vercel точные имена моделей
-    const available = (listData.models || [])
-      .filter(m => m.supportedGenerationMethods?.includes('generateContent'))
-      .map(m => m.name);
-
-    console.log('ACTIVE AVAILABLE MODELS:', available.join(', '));
-
-    // Выбираем самую быструю доступную модель (flash или любую первую подходящую)
-    const targetModel = available.find(name => name.includes('flash')) || available[0];
-
-    if (!targetModel) {
-      console.error('NO GENERATE MODELS IN LIST:', JSON.stringify(listData));
-      return res.status(404).json({ error: 'No compatible models found for this API key.' });
-    }
-
-    console.log('SELECTED MODEL:', targetModel);
-
-    // 2. Отправляем запрос к гарантированно существующей модели
-    const generateRes = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/${targetModel}:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+      if (listData.error) {
+        return res.status(400).json({
+          status: 'GOOGLE_REJECTED_KEY',
+          google_error: listData.error
+        });
       }
-    );
 
-    const generateData = await generateRes.json();
+      const availableModels = (listData.models || [])
+        .filter(m => m.supportedGenerationMethods?.includes('generateContent'))
+        .map(m => m.name.replace('models/', ''));
 
-    if (!generateRes.ok) {
-      console.error('GENERATION ERROR:', JSON.stringify(generateData));
-      return res.status(generateRes.status).json({ error: generateData.error?.message || 'Generation error' });
+      // Тестовый запрос к gemini-2.0-flash или первой найденной модели
+      const target = availableModels.find(m => m.includes('2.0-flash')) || availableModels[0] || 'gemini-1.5-flash';
+      const testReq = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${target}:generateContent?key=${apiKey}`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: 'Ответь одним словом: Работает!' }] }] })
+        }
+      );
+      const testData = await testReq.json();
+
+      return res.status(200).json({
+        status: 'SUCCESS',
+        key_length: apiKey.length,
+        available_models: availableModels,
+        tested_model: target,
+        ai_reply: testData.candidates?.[0]?.content?.parts?.[0]?.text || testData
+      });
+    } catch (e) {
+      return res.status(500).json({ status: 'DIAGNOSTIC_CRASH', error: e.message });
     }
+  }
 
-    const answer = generateData.candidates?.[0]?.content?.parts?.[0]?.text || 'No response generated.';
-    return res.status(200).json({ answer });
+  // РАБОЧИЙ РЕЖИМ ДЛЯ ВИДЖЕТА (POST)
+  if (req.method === 'POST') {
+    try {
+      const { question, productContext } = req.body || {};
 
-  } catch (error) {
-    console.error('INTERNAL HANDLER CRASH:', error);
-    return res.status(500).json({ error: error.message });
+      const promptText = `You are a helpful e-commerce assistant for "${productContext?.title || 'Product'}".
+Details: ${productContext?.description || ''}
+Price: ${productContext?.price || ''}
+Question: "${question}"
+Answer concisely in 1-2 sentences in the question language.`;
+
+      // Пробуем актуальную модель gemini-2.0-flash, затем fallback
+      const modelsToTry = ['gemini-2.0-flash', 'gemini-1.5-flash-latest', 'gemini-1.5-flash'];
+      let lastError = null;
+
+      for (const m of modelsToTry) {
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${apiKey}`,
+          {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+          }
+        );
+        const data = await response.json();
+        if (response.ok && data.candidates?.[0]?.content?.parts?.[0]?.text) {
+          return res.status(200).json({ answer: data.candidates[0].content.parts[0].text });
+        }
+        lastError = data.error?.message || JSON.stringify(data);
+      }
+
+      // Возвращаем реальную ошибку в поле answer, чтобы видеть ее прямо в виджете
+      return res.status(200).json({ answer: `⚠️ Ошибка Google Gemini: ${lastError}` });
+    } catch (error) {
+      return res.status(200).json({ answer: `⚠️ Внутренняя ошибка: ${error.message}` });
+    }
   }
 }
