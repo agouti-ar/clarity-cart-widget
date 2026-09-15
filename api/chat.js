@@ -38,9 +38,9 @@ export default async function handler(req, res) {
       const promptText = `You are a helpful e-commerce assistant. Product: "${productContext?.title || 'Unknown'}". Details: ${productContext?.description || 'None'}. Price: ${productContext?.price || 'Unknown'}. Question: "${question}". Answer concisely in 1-2 sentences.`;
 
       const modelPriority = [
-        'gemini-2.0-flash',
-        'gemini-1.5-flash',
-        'gemini-1.5-pro'
+        'gemini-3.5-flash',
+        'gemini-2.5-flash',
+        'gemini-flash-latest'
       ];
 
       let lastError = null;
