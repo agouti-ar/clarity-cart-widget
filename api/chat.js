@@ -39,6 +39,7 @@ Rules:
 Shopper's question: ${question}`;
 
   try {
+    // Ensure we are using the stable gemini-1.5-flash model to prevent 404
     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
       method: 'POST',
       headers: {
