@@ -506,13 +506,13 @@
                 input.disabled = true;
                 sendBtn.disabled = true;
 
-                // Call real Gemini API
-                fetch(API_URL, {
+                // Call our Vercel backend instead of direct Google API
+                fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         question,
-                        productData: this.productData
+                        productContext: this.productData
                     })
                 })
                 .then(res => {
