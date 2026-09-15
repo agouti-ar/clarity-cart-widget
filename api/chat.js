@@ -26,7 +26,7 @@ export default async function handler(req, res) {
     const promptText = `You are a helpful e-commerce assistant. Product: "${productContext?.title || ''}". Question: "${question}". Answer concisely in 1-2 sentences.`;
 
     // Тестируем старую 100% стабильную модель на v1, как просил Claude
-    const url = `https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key=${apiKey}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${apiKey}`;
     console.log('📤 Sending to Google API:', url.replace(apiKey, '[REDACTED_KEY]'));
 
     const response = await fetch(url, {
