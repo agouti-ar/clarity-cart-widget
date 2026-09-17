@@ -433,7 +433,7 @@
 
             const html = `
                 <style>${styles}</style>
-                <div class="widget-container">
+                <div class="widget-container notranslate" translate="no">
                     <div class="header">
                         <h3 class="title">
                             <svg class="title-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
