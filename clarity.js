@@ -532,7 +532,7 @@
                 const extractedContext = this.extractProductContext();
 
                 // Call our Vercel backend instead of direct Google API
-                fetch('/api/chat', {
+                fetch('https://clarity-cart-widget.vercel.app/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
