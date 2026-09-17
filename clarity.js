@@ -35,52 +35,79 @@
         }
 
         extractProductContext() {
-            const title = document.querySelector('h1')?.innerText?.trim() || document.title;
-            
-            let price = '';
-            const priceSelectors = ['.current-price', '[class*="price"]:not([class*="old"]):not([class*="strike"])'];
-            for (let sel of priceSelectors) {
-                const el = document.querySelector(sel);
-                if (el && el.innerText.match(/\d/)) {
-                    price = el.innerText.trim();
-                    break;
-                }
-            }
-            
+            let title = '';
             let description = '';
-            const descSelectors = ['.description', '#product-description', '[class*="desc"]'];
-            for (let sel of descSelectors) {
-                const el = document.querySelector(sel);
-                if (el) {
-                    description += el.innerText.trim() + '\n';
-                    break;
-                }
-            }
-            
-            const featuresSelectors = ['.features', '[class*="feature"]', 'ul'];
-            for (let sel of featuresSelectors) {
-                const el = document.querySelector(sel);
-                if (el) {
-                    description += el.innerText.trim() + '\n';
-                    break;
+            let price = '';
+            let currency = '';
+
+            // а) Поиск в микроразметке JSON-LD
+            const jsonLdScripts = document.querySelectorAll('script[type="application/ld+json"]');
+            for (let script of jsonLdScripts) {
+                try {
+                    const data = JSON.parse(script.innerText);
+                    const items = Array.isArray(data) ? data : [data];
+                    
+                    for (let item of items) {
+                        const graphItems = item['@graph'] ? item['@graph'] : [item];
+                        for (let gItem of graphItems) {
+                            if (gItem['@type'] === 'Product') {
+                                title = gItem.name || title;
+                                description = gItem.description || description;
+                                if (gItem.offers) {
+                                    const offer = Array.isArray(gItem.offers) ? gItem.offers[0] : gItem.offers;
+                                    price = offer.price || price;
+                                    currency = offer.priceCurrency || currency;
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {
+                    // Игнорируем ошибки парсинга
                 }
             }
 
-            let shippingPolicy = '';
-            const shippingSelectors = ['.delivery-info', '[class*="delivery"]', '[class*="shipping"]'];
-            for (let sel of shippingSelectors) {
-                const el = document.querySelector(sel);
-                if (el) {
-                    shippingPolicy += el.innerText.trim() + '\n';
-                    break;
+            // б) Поиск в OpenGraph и мета-тегах
+            if (!title) {
+                title = document.querySelector('meta[property="og:title"]')?.content || 
+                        document.title || 
+                        document.querySelector('h1')?.innerText?.trim() || '';
+            }
+            if (!description) {
+                description = document.querySelector('meta[name="description"]')?.content || 
+                              document.querySelector('meta[property="og:description"]')?.content || '';
+            }
+            if (!price) {
+                price = document.querySelector('meta[property="product:price:amount"]')?.content || '';
+            }
+
+            // в) DOM-fallback
+            if (!title) {
+                title = document.querySelector('h1')?.innerText?.trim() || '';
+            }
+            if (!description) {
+                const descSelectors = ['.description', '#product-description', '[class*="desc"]'];
+                for (let sel of descSelectors) {
+                    const el = document.querySelector(sel);
+                    if (el) {
+                        description += el.innerText.trim() + '\n';
+                    }
+                }
+            }
+            if (!price) {
+                const priceSelectors = ['.current-price', '[class*="price"]:not([class*="old"]):not([class*="strike"])'];
+                for (let sel of priceSelectors) {
+                    const el = document.querySelector(sel);
+                    if (el && el.innerText.match(/\d/)) {
+                        price = el.innerText.trim();
+                        break;
+                    }
                 }
             }
 
             const productData = {
-                title,
-                price,
-                description: description.trim(),
-                shippingPolicy: shippingPolicy.trim()
+                title: title.trim(),
+                price: price ? `${price} ${currency}`.trim() : '',
+                description: description.trim()
             };
 
             console.log("🛒 ClarityCart Parsed Context:", productData);
@@ -506,13 +533,15 @@
                 input.disabled = true;
                 sendBtn.disabled = true;
 
+                const extractedContext = this.extractProductContext();
+
                 // Call our Vercel backend instead of direct Google API
                 fetch('/api/chat', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         question,
-                        productContext: this.productData
+                        productContext: extractedContext
                     })
                 })
                 .then(res => {
@@ -528,6 +557,10 @@
                     
                     const response = data.answer || "Sorry, I received an empty response.";
                     addMessage(response, 'ai');
+
+                    if (data.usedModel) {
+                        console.log(`[ClarityCart] Response generated using: ${data.usedModel}`);
+                    }
                 })
                 .catch(err => {
                     console.error('ClarityCart API Error:', err);
@@ -537,7 +570,7 @@
                     sendBtn.disabled = false;
                     input.focus();
                     
-                    addMessage("Sorry, I couldn't connect. Please try again in a moment.", 'ai');
+                    addMessage("Произошла ошибка при соединении с сервером. Пожалуйста, попробуйте еще раз.", 'ai');
                 });
             };
 
