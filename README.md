@@ -1,5 +1,9 @@
 # ClarityCart AI — Instant pre-purchase AI assistant for e-commerce
 
+<p align="center">
+  <img src="./demo.gif" alt="ClarityCart AI Demo" width="700" />
+</p>
+
 ## Problem & Value
 Shopping cart abandonment is a major issue in e-commerce. Often, customers leave because they can't quickly find answers about sizing, materials, or delivery. **ClarityCart AI** solves this by providing instant, AI-driven answers directly on the product page, reducing friction and increasing conversion rates.
 
