@@ -16,15 +16,21 @@
 
         injectWidget() {
             const targetElement = document.querySelector(this.targetSelector);
-            if (!targetElement) {
-                console.warn('ClarityCart: Target element not found');
-                return;
-            }
-
             const hostElement = document.createElement('div');
             hostElement.id = 'clarity-cart-widget-root';
             
-            targetElement.parentNode.insertBefore(hostElement, targetElement.nextSibling);
+            if (targetElement && targetElement.parentNode) {
+                targetElement.parentNode.insertBefore(hostElement, targetElement.nextSibling);
+            } else {
+                console.warn('ClarityCart: Target element not found, mounting autonomously to body');
+                hostElement.style.position = 'fixed';
+                hostElement.style.bottom = '20px';
+                hostElement.style.right = '20px';
+                hostElement.style.width = '350px';
+                hostElement.style.maxWidth = '90vw';
+                hostElement.style.zIndex = '999999';
+                document.body.appendChild(hostElement);
+            }
 
             const shadow = hostElement.attachShadow({ mode: 'open' });
 
@@ -276,18 +282,9 @@
 
                 /* Expandable Chat Area */
                 .chat-container {
-                    max-height: 0;
-                    overflow: hidden;
-                    transition: max-height 0.4s cubic-bezier(0.16, 1, 0.3, 1), margin-top 0.4s ease, opacity 0.3s ease;
-                    opacity: 0;
                     display: flex;
                     flex-direction: column;
-                }
-
-                .chat-container.open {
-                    max-height: 400px;
                     margin-top: 16px;
-                    opacity: 1;
                     border-top: 1px solid #f0f0f0;
                     padding-top: 16px;
                 }
@@ -504,7 +501,6 @@
 
             const openChat = () => {
                 if (!isChatOpen) {
-                    chatContainer.classList.add('open');
                     resetBtn.classList.add('visible');
                     isChatOpen = true;
                 }
@@ -586,7 +582,6 @@
             });
 
             resetBtn.addEventListener('click', () => {
-                chatContainer.classList.remove('open');
                 resetBtn.classList.remove('visible');
                 isChatOpen = false;
                 
