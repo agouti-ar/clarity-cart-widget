@@ -1,79 +1,58 @@
 export default async function handler(req, res) {
+  // CORS и Антикэш
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
+  res.setHeader('Access-Control-Allow-Methods', 'OPTIONS,POST');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
+  
+  // Блокируем всё, кроме POST (безопасность)
+  if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
   let apiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
+  if (!apiKey) return res.status(200).json({ answer: '⚠️ Ошибка: Ключ API не настроен.' });
 
-  if (!apiKey) {
-    return res.status(200).json({ error: 'GEMINI_API_KEY not found in environment' });
-  }
+  try {
+    const { question, productContext } = req.body || {};
+    const promptText = `You are a helpful e-commerce assistant. Product: "${productContext?.title || 'Unknown'}". Details: ${productContext?.description || 'None'}. Price: ${productContext?.price || 'Unknown'}. Question: "${question}". Answer concisely in 1-2 sentences.`;
 
-  // 🟢 GET: Покажи все доступные модели
-  if (req.method === 'GET') {
-    try {
-      const listUrl = `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`;
-      const listResponse = await fetch(listUrl);
-      const listData = await listResponse.json();
-      
-      return res.status(200).json({
-        success: true,
-        models: listData.models || [],
-        allData: listData
-      });
-    } catch (error) {
-      return res.status(500).json({ error: error.message });
-    }
-  }
+    const modelPriority = [
+      'gemini-3.5-flash',
+      'gemini-2.5-flash',
+      'gemini-flash-latest'
+    ];
 
-  // 🟢 POST: Отправь вопрос
-  if (req.method === 'POST') {
-    try {
-      const { question, productContext } = req.body || {};
-      const promptText = `You are a helpful e-commerce assistant. Product: "${productContext?.title || 'Unknown'}". Details: ${productContext?.description || 'None'}. Price: ${productContext?.price || 'Unknown'}. Question: "${question}". Answer concisely in 1-2 sentences.`;
+    let lastError = null;
 
-      const modelPriority = [
-        'gemini-3.5-flash',
-        'gemini-2.5-flash',
-        'gemini-flash-latest'
-      ];
+    for (const model of modelPriority) {
+      try {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+        });
 
-      let lastError = null;
+        const data = await response.json();
 
-      for (const model of modelPriority) {
-        try {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-          const response = await fetch(url, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
+        if (response.ok && data.candidates) {
+          return res.status(200).json({ 
+            answer: data.candidates[0].content.parts[0].text,
+            usedModel: model // Возвращаем для аналитики
           });
-
-          const data = await response.json();
-
-          if (response.ok && data.candidates) {
-            const answer = data.candidates[0].content.parts[0].text;
-            return res.status(200).json({ answer });
-          } else {
-            lastError = data.error?.message;
-            continue;
-          }
-        } catch (err) {
-          lastError = err.message;
-          continue;
+        } else {
+          lastError = data.error?.message;
         }
+      } catch (err) {
+        lastError = err.message;
       }
-
-      return res.status(200).json({ answer: `⚠️ No available models. Last error: ${lastError}` });
-    } catch (error) {
-      return res.status(200).json({ answer: `⚠️ ${error.message}` });
     }
-  }
 
-  return res.status(405).json({ error: 'Method Not Allowed' });
+    return res.status(200).json({ answer: `⚠️ No available models. Last error: ${lastError}` });
+  } catch (error) {
+    return res.status(200).json({ answer: `⚠️ ${error.message}` });
+  }
 }
