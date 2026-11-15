@@ -1,18 +1,18 @@
-# ClarityCart AI — Instant pre-purchase AI assistant for e-commerce
+# ClarityCart AI | Embeddable product advisor
 
 <p align="center">
   <img src="./demo.gif" alt="ClarityCart AI Demo" width="700" />
 </p>
 
 ## Problem & Value
-Shopping cart abandonment is a major issue in e-commerce. Often, customers leave because they can't quickly find answers about sizing, materials, or delivery. **ClarityCart AI** solves this by providing instant, AI-driven answers directly on the product page, reducing friction and increasing conversion rates.
+ClarityCart AI reads product details from an e-commerce page and uses them to answer shoppers’ questions. This repository contains the browser widget and the Vercel function that calls Gemini. See the [product landing page source](https://github.com/agouti-ar/claritycart-landing) for the marketing site.
 
 ## Core Features
 - **Zero-dependency Vanilla JS**: Lightweight and fast.
 - **Shadow DOM**: Fully encapsulated styling that won't conflict with your store's CSS.
 - **Autonomous Data Scraping**: Automatically extracts product context via JSON-LD, OpenGraph, or DOM fallback.
-- **Vercel Backend**: Secure API proxy that hides your API keys.
-- **Gemini AI Integration**: Uses Gemini 3.5/2.5 Flash for rapid, accurate responses.
+- **Vercel function**: Keeps the Gemini API key on the server.
+- **Gemini AI Integration**: Tries configured Gemini Flash models in order.
 - **Translate Guard**: Protected against Google Translate DOM mutations (`translate="no"`).
 
 ## Quick Start
@@ -31,3 +31,5 @@ The widget will autonomously mount itself to the page, parse the product data, a
    // Production security: replace '*' with allowed domains (e.g. 'https://yourstore.com')
    res.setHeader('Access-Control-Allow-Origin', 'https://yourstore.com');
    ```
+
+Before exposing a production endpoint, add abuse protection and request limits. CORS controls browser access and does not authenticate direct requests.
