@@ -5,7 +5,7 @@
 </p>
 
 ## Problem & Value
-ClarityCart AI reads product details from an e-commerce page and uses them to answer shoppers’ questions. This repository contains the browser widget and the Vercel function that calls Gemini. See the [product landing page source](https://github.com/agouti-ar/claritycart-landing) for the marketing site.
+ClarityCart AI reads product details from an e-commerce page and uses them to answer shoppers’ questions. This repository contains an earlier standalone demo, with the browser widget and its own Gemini endpoint. The [current project and widget source](https://github.com/agouti-ar/claritycart-landing) live in the main ClarityCart repository.
 
 ## Core Features
 - **Zero-dependency Vanilla JS**: Lightweight and fast.
@@ -16,7 +16,7 @@ ClarityCart AI reads product details from an e-commerce page and uses them to an
 - **Translate Guard**: Protected against Google Translate DOM mutations (`translate="no"`).
 
 ## Quick Start
-To integrate ClarityCart into your store, simply include the script just before the closing `</body>` tag on your product pages:
+The original demo can be loaded by including this script before the closing `</body>` tag on a test page:
 
 ```html
 <script src="https://clarity-cart-widget.vercel.app/clarity.js" defer></script>
