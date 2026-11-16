@@ -1,5 +1,7 @@
 # ClarityCart AI | Embeddable product advisor
 
+![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?logo=javascript&logoColor=black) ![Vercel](https://img.shields.io/badge/Vercel-000000?logo=vercel&logoColor=white)
+
 <p align="center">
   <img src="./demo.gif" alt="ClarityCart AI Demo" width="700" />
 </p>
