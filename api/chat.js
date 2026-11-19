@@ -1,16 +1,16 @@
 export default async function handler(req, res) {
-  // CORS и Антикэш
+  // CORS and cache headers
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
-  // Production security: replace '*' with allowed domains (e.g. 'https://yourstore.com')
+  // For production browser access, replace the wildcard with the permitted storefront origin.
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'OPTIONS,POST');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   
-  // Блокируем всё, кроме POST (безопасность)
+  // Reject methods other than POST after handling preflight.
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method Not Allowed' });
 
   let apiKey = (process.env.GEMINI_API_KEY || '').trim().replace(/^["']|["']$/g, '');
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
         if (response.ok && data.candidates) {
           return res.status(200).json({ 
             answer: data.candidates[0].content.parts[0].text,
-            usedModel: model // Возвращаем для аналитики
+            usedModel: model // Include the model ID in the response for analytics.
           });
         } else {
           lastError = data.error?.message;

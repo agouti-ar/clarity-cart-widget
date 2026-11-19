@@ -46,7 +46,7 @@
             let price = '';
             let currency = '';
 
-            // а) Поиск в микроразметке JSON-LD
+            // Read product data from JSON-LD.
             const jsonLdScripts = document.querySelectorAll('script[type="application/ld+json"]');
             for (let script of jsonLdScripts) {
                 try {
@@ -68,11 +68,11 @@
                         }
                     }
                 } catch (e) {
-                    // Игнорируем ошибки парсинга
+                    // Skip malformed JSON-LD blocks.
                 }
             }
 
-            // б) Поиск в OpenGraph и мета-тегах
+            // Fall back to Open Graph metadata.
             if (!title) {
                 title = document.querySelector('meta[property="og:title"]')?.content || 
                         document.title || 
@@ -86,7 +86,7 @@
                 price = document.querySelector('meta[property="product:price:amount"]')?.content || '';
             }
 
-            // в) DOM-fallback
+            // Fall back to product elements in the DOM.
             if (!title) {
                 title = document.querySelector('h1')?.innerText?.trim() || '';
             }

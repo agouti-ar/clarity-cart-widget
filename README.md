@@ -10,12 +10,12 @@
 ClarityCart AI reads product details from an e-commerce page and uses them to answer shoppers’ questions. This repository contains an earlier standalone demo, with the browser widget and its own Gemini endpoint. The [current project and widget source](https://github.com/agouti-ar/claritycart-landing) live in the main ClarityCart repository.
 
 ## Core Features
-- **Zero-dependency Vanilla JS**: Lightweight and fast.
-- **Shadow DOM**: Fully encapsulated styling that won't conflict with your store's CSS.
-- **Autonomous Data Scraping**: Automatically extracts product context via JSON-LD, OpenGraph, or DOM fallback.
+- **Vanilla JavaScript**: The browser widget has no runtime package dependencies.
+- **Shadow DOM**: Isolates the widget's internal styles from the host page.
+- **Product data extraction**: Reads JSON-LD, Open Graph metadata, and DOM elements.
 - **Vercel function**: Keeps the Gemini API key on the server.
 - **Gemini AI Integration**: Tries configured Gemini Flash models in order.
-- **Translate Guard**: Protected against Google Translate DOM mutations (`translate="no"`).
+- **Automatic translation opt-out**: The widget sets `translate="no"`.
 
 ## Quick Start
 The original demo can be loaded by including this script before the closing `</body>` tag on a test page:
@@ -28,9 +28,9 @@ The widget will autonomously mount itself to the page, parse the product data, a
 
 ## Configuration
 1. **API Key**: Set your `GEMINI_API_KEY` in your Vercel project environment variables.
-2. **CORS**: For production, restrict access to your widget backend by updating `api/chat.js`:
+2. **CORS**: Configure the storefront origin allowed to read browser responses from `api/chat.js`:
    ```javascript
-   // Production security: replace '*' with allowed domains (e.g. 'https://yourstore.com')
+   // Allow browser requests from the configured storefront origin.
    res.setHeader('Access-Control-Allow-Origin', 'https://yourstore.com');
    ```
 
